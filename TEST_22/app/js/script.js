@@ -152,7 +152,12 @@ function updateMovement(delta) {
 // Add touch controls for movement
 function setupTouchControls() {
     // Create controls container
-    const touchControls = document.createElement('div');
+  let touchControls = document.getElementById('touch-controls');
+    if (touchControls) return touchControls;
+    
+    // Create controls container
+    touchControls = document.createElement('div');
+    touchControls.id = 'touch-controls';   
     touchControls.id = 'touch-controls';
     touchControls.style.position = 'fixed';
     touchControls.style.bottom = '20px';
@@ -163,7 +168,7 @@ function setupTouchControls() {
     touchControls.style.display = 'none'; // Start hidden
     touchControls.style.pointerEvents = 'none';
     touchControls.style.zIndex = '1000';
-    document.body.appendChild(touchControls);
+    document.body.appendChild(touchControls);    
 
     // Movement pad (joystick background)
     const movePad = document.createElement('div');
@@ -273,40 +278,37 @@ function setupTouchControls() {
         joystick.style.opacity = '0.5';
     }
 
+    return touchControls;
+
     // Show controls after loading
     document.querySelector('.loading-screen').addEventListener('transitionend', () => {
         touchControls.style.display = 'block';
     });
+
+        
 }
-function initControls() {
+
+      function initControls() {
     if (isMobile) {
         setupTouchControls();
-
+        
         renderer.antialias = false;
         renderer.shadowMap.enabled = false;
         
-        // Get the loading screen element
-        const loadingScreen = document.querySelector('.loading-screen');
-        
-        if (loadingScreen) {
-            loadingScreen.addEventListener('transitionend', () => {
-                const touchControls = document.getElementById('touch-controls');
-                if (touchControls) {
-                    touchControls.style.display = 'flex';
-                }
-            });
-        } else {
-            // If no loading screen, just show controls immediately
-            const touchControls = document.getElementById('touch-controls');
-            if (touchControls) {
+        // Only try to show controls if the element exists
+        const touchControls = document.getElementById('touch-controls');
+        if (touchControls) {
+            // Show controls after loading
+            document.querySelector('.loading-screen').addEventListener('transitionend', () => {
                 touchControls.style.display = 'flex';
-            }
+            });
         }
     } else {
         setupMouseLock();
         setupKeyboardControls();
     }
 }
+
 
 //lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
