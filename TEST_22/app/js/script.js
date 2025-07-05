@@ -287,16 +287,7 @@ function setupTouchControls() {
                  renderer.antialias = false;
                  renderer.shadowMap.enabled = false;
                 
-                // Show fullscreen button on mobile
-                const fsButton = document.getElementById('fullscreen-button');
-                fsButton.style.display = 'block';
-                fsButton.addEventListener('click', () => {
-                    if (document.documentElement.requestFullscreen) {
-                        document.documentElement.requestFullscreen();
-                    } else if (document.documentElement.webkitRequestFullscreen) {
-                        document.documentElement.webkitRequestFullscreen();
-                    }
-                });
+              
                 
                 // Show controls after loading
                 document.querySelector('.loading-screen').addEventListener('transitionend', () => {
@@ -897,36 +888,62 @@ const loadingManager = new THREE.LoadingManager(
     }
 );
 
-// Load HDR
-new RGBELoader()
-    .setPath('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/')
-    .load('environment.hdr', function (texture) {
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        scene.background = texture;
-        scene.environment = texture;
-                        
-        const loader = new GLTFLoader(loadingManager);
-        loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
-            const model = gltf.scene;
-            model.position.set(0, 0, 0);
-            model.scale.set(2, 2, 2);
-            scene.add(model);
-
-            createExhibitHotspots();
-            createPictureHotspots();
+// Only load HDR environment if not on mobile
+if (!isMobile) {
+    new RGBELoader()
+        .setPath('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/')
+        .load('environment.hdr', function (texture) {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.background = texture;
+            scene.environment = texture;
             
-            // Setup controls after everything is loaded
-            setupMouseLock();
-            setupKeyboardControls();
-            initControls();
+            // Load museum model after environment is set
+            const loader = new GLTFLoader(loadingManager);
+            loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
+                const model = gltf.scene;
+                model.position.set(0, 0, 0);
+                model.scale.set(2, 2, 2);
+                scene.add(model);
 
-             },
-    undefined, // Progress callback
-    (error) => {
-        console.error('Error loading museum model:', error);
-
+                createExhibitHotspots();
+                createPictureHotspots();
+                
+                // Setup controls after everything is loaded
+                setupMouseLock();
+                setupKeyboardControls();
+                initControls();
+            }, undefined, (error) => {
+                console.error('Error loading museum model:', error);
+            });
+        }, undefined, (error) => {
+            console.error('Error loading HDR environment:', error);
+            // Even if HDR fails, still load the museum model
+            loadMuseumModel();
         });
+} else {
+    // On mobile, just load the museum model without environment texture
+    loadMuseumModel();
+}
+
+function loadMuseumModel() {
+    const loader = new GLTFLoader(loadingManager);
+    loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
+        const model = gltf.scene;
+        model.position.set(0, 0, 0);
+        model.scale.set(2, 2, 2);
+        scene.add(model);
+
+        createExhibitHotspots();
+        createPictureHotspots();
+        
+        // Setup controls after everything is loaded
+        setupMouseLock();
+        setupKeyboardControls();
+        initControls();
+    }, undefined, (error) => {
+        console.error('Error loading museum model:', error);
     });
+}
 
 renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // Cap pixel ratio
 
