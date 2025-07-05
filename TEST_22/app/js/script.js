@@ -278,27 +278,35 @@ function setupTouchControls() {
         touchControls.style.display = 'block';
     });
 }
+function initControls() {
+    if (isMobile) {
+        setupTouchControls();
 
-        // Modify your initialization
-        function initControls() {
-            if (isMobile) {
-                setupTouchControls();
-
-                 renderer.antialias = false;
-                 renderer.shadowMap.enabled = false;
-                
-              
-                
-                // Show controls after loading
-                document.querySelector('.loading-screen').addEventListener('transitionend', () => {
-                    document.getElementById('touch-controls').style.display = 'flex';
-                });
-            } else {
-                setupMouseLock();
-                setupKeyboardControls();
+        renderer.antialias = false;
+        renderer.shadowMap.enabled = false;
+        
+        // Get the loading screen element
+        const loadingScreen = document.querySelector('.loading-screen');
+        
+        if (loadingScreen) {
+            loadingScreen.addEventListener('transitionend', () => {
+                const touchControls = document.getElementById('touch-controls');
+                if (touchControls) {
+                    touchControls.style.display = 'flex';
+                }
+            });
+        } else {
+            // If no loading screen, just show controls immediately
+            const touchControls = document.getElementById('touch-controls');
+            if (touchControls) {
+                touchControls.style.display = 'flex';
             }
         }
-
+    } else {
+        setupMouseLock();
+        setupKeyboardControls();
+    }
+}
 
 //lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
