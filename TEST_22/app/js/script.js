@@ -928,8 +928,6 @@ new RGBELoader()
         });
     });
 
-    // ... (keep all your existing imports and initial setup code)
-
 function createInstructionButton() {
     const instructionButton = document.createElement('div');
     instructionButton.id = 'instruction-button';
