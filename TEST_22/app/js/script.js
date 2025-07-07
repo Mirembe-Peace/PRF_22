@@ -152,12 +152,7 @@ function updateMovement(delta) {
 // Add touch controls for movement
 function setupTouchControls() {
     // Create controls container
-  let touchControls = document.getElementById('touch-controls');
-    if (touchControls) return touchControls;
-    
-    // Create controls container
-    touchControls = document.createElement('div');
-    touchControls.id = 'touch-controls';   
+    const touchControls = document.createElement('div');
     touchControls.id = 'touch-controls';
     touchControls.style.position = 'fixed';
     touchControls.style.bottom = '20px';
@@ -168,7 +163,7 @@ function setupTouchControls() {
     touchControls.style.display = 'none'; // Start hidden
     touchControls.style.pointerEvents = 'none';
     touchControls.style.zIndex = '1000';
-    document.body.appendChild(touchControls);    
+    document.body.appendChild(touchControls);
 
     // Movement pad (joystick background)
     const movePad = document.createElement('div');
@@ -278,36 +273,40 @@ function setupTouchControls() {
         joystick.style.opacity = '0.5';
     }
 
-    return touchControls;
-
     // Show controls after loading
     document.querySelector('.loading-screen').addEventListener('transitionend', () => {
         touchControls.style.display = 'block';
     });
-
-        
 }
 
-      function initControls() {
-    if (isMobile) {
-        setupTouchControls();
-        
-        renderer.antialias = false;
-        renderer.shadowMap.enabled = false;
-        
-        // Only try to show controls if the element exists
-        const touchControls = document.getElementById('touch-controls');
-        if (touchControls) {
-            // Show controls after loading
-            document.querySelector('.loading-screen').addEventListener('transitionend', () => {
-                touchControls.style.display = 'flex';
-            });
+        // Modify your initialization
+        function initControls() {
+            if (isMobile) {
+                setupTouchControls();
+
+                 renderer.antialias = false;
+                 renderer.shadowMap.enabled = false;
+                
+                // Show fullscreen button on mobile
+                const fsButton = document.getElementById('fullscreen-button');
+                fsButton.style.display = 'block';
+                fsButton.addEventListener('click', () => {
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                    } else if (document.documentElement.webkitRequestFullscreen) {
+                        document.documentElement.webkitRequestFullscreen();
+                    }
+                });
+                
+                // Show controls after loading
+                document.querySelector('.loading-screen').addEventListener('transitionend', () => {
+                    document.getElementById('touch-controls').style.display = 'flex';
+                });
+            } else {
+                setupMouseLock();
+                setupKeyboardControls();
+            }
         }
-    } else {
-        setupMouseLock();
-        setupKeyboardControls();
-    }
-}
 
 
 //lights
@@ -898,62 +897,36 @@ const loadingManager = new THREE.LoadingManager(
     }
 );
 
-// Only load HDR environment if not on mobile
-if (!isMobile) {
-    new RGBELoader()
-        .setPath('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/')
-        .load('environment.hdr', function (texture) {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-            scene.environment = texture;
+// Load HDR
+new RGBELoader()
+    .setPath('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/')
+    .load('environment.hdr', function (texture) {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = texture;
+        scene.environment = texture;
+                        
+        const loader = new GLTFLoader(loadingManager);
+        loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
+            const model = gltf.scene;
+            model.position.set(0, 0, 0);
+            model.scale.set(2, 2, 2);
+            scene.add(model);
+
+            createExhibitHotspots();
+            createPictureHotspots();
             
-            // Load museum model after environment is set
-            const loader = new GLTFLoader(loadingManager);
-            loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
-                const model = gltf.scene;
-                model.position.set(0, 0, 0);
-                model.scale.set(2, 2, 2);
-                scene.add(model);
+            // Setup controls after everything is loaded
+            setupMouseLock();
+            setupKeyboardControls();
+            initControls();
 
-                createExhibitHotspots();
-                createPictureHotspots();
-                
-                // Setup controls after everything is loaded
-                setupMouseLock();
-                setupKeyboardControls();
-                initControls();
-            }, undefined, (error) => {
-                console.error('Error loading museum model:', error);
-            });
-        }, undefined, (error) => {
-            console.error('Error loading HDR environment:', error);
-            // Even if HDR fails, still load the museum model
-            loadMuseumModel();
-        });
-} else {
-    // On mobile, just load the museum model without environment texture
-    loadMuseumModel();
-}
-
-function loadMuseumModel() {
-    const loader = new GLTFLoader(loadingManager);
-    loader.load('https://storage.googleapis.com/pearl-artifacts-cdn/museum_model/museum_test_1blend.gltf', (gltf) => {
-        const model = gltf.scene;
-        model.position.set(0, 0, 0);
-        model.scale.set(2, 2, 2);
-        scene.add(model);
-
-        createExhibitHotspots();
-        createPictureHotspots();
-        
-        // Setup controls after everything is loaded
-        setupMouseLock();
-        setupKeyboardControls();
-        initControls();
-    }, undefined, (error) => {
+             },
+    undefined, // Progress callback
+    (error) => {
         console.error('Error loading museum model:', error);
+
+        });
     });
-}
 
 renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // Cap pixel ratio
 
